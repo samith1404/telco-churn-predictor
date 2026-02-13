@@ -1,0 +1,5 @@
+Model,Original_Acc,Drift_Acc,Delta
+Logistic,0.91,0.91,0.0
+Random Forest,0.84,0.84,0.0
+XGBoost,0.894,0.899,0.005
+XGBoost Retrain,,0.9010884997633696,
