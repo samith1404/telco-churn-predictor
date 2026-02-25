@@ -285,8 +285,7 @@ elif page == "📈 Research Results":
         st.pyplot(fig)
 
     except:
-        st.warning("Run experiments first: `python run_experiments.py`")
-
+        st.error(f"Error: {e}")
 
 elif page == "🎯 Model Robustness":
     st.title("🎯 Model Robustness Comparison")
