@@ -193,11 +193,11 @@ elif page == "🔮 Live Prediction":
         try:
             import os
             base_path = os.path.dirname(os.path.abspath(__file__))
-            models_path = os.path.join(base_path, 'models')
             
-            model = joblib.load(os.path.join(models_path, 'xgb_model.pkl'))
-            le_contract = joblib.load(os.path.join(models_path, 'le_contract.pkl'))
-            le_internet = joblib.load(os.path.join(models_path, 'le_internet.pkl'))
+            
+            model = joblib.load(os.path.join(base_path, 'xgb_model.pkl'))
+            le_contract = joblib.load(os.path.join(base_path, 'le_contract.pkl'))
+            le_internet = joblib.load(os.path.join(base_path, 'le_internet.pkl'))
             return model, le_contract, le_internet, None
         except Exception as e:
             return None, None, None, str(e)
@@ -282,7 +282,7 @@ elif page == "📈 Research Results":
         ax.spines['top'].set_color('#444')
         ax.spines['right'].set_color('#444')
         ax.grid(True, alpha=0.2, color='white')
-        st.pyplot(fig)
+        st.pyplot(fig)source venv/bin/activate
 
     except:
         st.warning("Run experiments first: `python run_experiments.py`")
