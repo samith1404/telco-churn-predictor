@@ -1,0 +1,35 @@
+======================================================================
+DATA DRIFT IMPACT ON ML MODEL PERFORMANCE - SUMMARY REPORT
+======================================================================
+
+Generated: 2026-02-19 15:31:10
+
+
+1. COVARIATE DRIFT ANALYSIS
+----------------------------------------------------------------------
+
+Logistic Regression:
+  Baseline Accuracy: 0.7793
+  High Drift Accuracy: 0.7885
+  Performance Degradation: -0.0092 (-1.18%)
+
+Random Forest:
+  Baseline Accuracy: 0.7601
+  High Drift Accuracy: 0.7502
+  Performance Degradation: 0.0099 (1.31%)
+
+XGBoost:
+  Baseline Accuracy: 0.7793
+  High Drift Accuracy: 0.7708
+  Performance Degradation: 0.0085 (1.09%)
+
+SVM:
+  Baseline Accuracy: 0.7346
+  High Drift Accuracy: 0.7346
+  Performance Degradation: 0.0000 (0.00%)
+
+
+2. PRIOR PROBABILITY DRIFT ANALYSIS
+----------------------------------------------------------------------
+
+Tested churn ratios: [np.float64(0.15), np.float64(0.2), np.float64(0.27), np.float64(0.35), np.float64(0.45), np.float64(0.55)]
