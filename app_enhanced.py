@@ -284,7 +284,7 @@ elif page == "📈 Research Results":
         ax.grid(True, alpha=0.2, color='white')
         st.pyplot(fig)
 
-    except:
+    except Exception as e:
         st.error(f"Error: {e}")
 
 elif page == "🎯 Model Robustness":
