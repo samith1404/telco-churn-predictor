@@ -282,7 +282,7 @@ elif page == "📈 Research Results":
         ax.spines['top'].set_color('#444')
         ax.spines['right'].set_color('#444')
         ax.grid(True, alpha=0.2, color='white')
-        st.pyplot(fig)source venv/bin/activate
+        st.pyplot(fig)
 
     except:
         st.warning("Run experiments first: `python run_experiments.py`")
