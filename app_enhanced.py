@@ -192,7 +192,7 @@ elif page == "🔮 Live Prediction":
     def load_models():
         try:
             import os
-            base_path = os.path.dirname(os.path.abspath(__file__))
+            base_path = os.getcwd()
             
             
             model = joblib.load(os.path.join(base_path, 'xgb_model.pkl'))
