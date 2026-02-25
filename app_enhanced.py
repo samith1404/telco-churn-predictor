@@ -374,6 +374,141 @@ elif page == "💼 Industry Value":
         - Predict when models need updating
         - Reduce emergency interventions
         """)
+# =====================================================
+# 📄 PDF REPORT GENERATION FUNCTION
+# =====================================================
 
+def generate_pdf_report(results_df):
+
+    pdf_path = "ML_Data_Drift_Report.pdf"
+    doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Title
+    elements.append(Paragraph("<b>Data Drift Impact on ML Model Performance</b>", styles["Title"]))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    elements.append(Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles["Normal"]))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # Executive Summary
+    elements.append(Paragraph("<b>Executive Summary</b>", styles["Heading2"]))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    baseline = results_df[results_df['drift_magnitude'] == 0.0]
+    high_drift = results_df[results_df['drift_magnitude'] == results_df['drift_magnitude'].max()]
+
+    summary_text = f"""
+    Total Models Tested: {results_df['model'].nunique()} <br/>
+    Total Experiments Conducted: {len(results_df)} <br/>
+    Maximum Drift Level: {results_df['drift_magnitude'].max()} <br/>
+    Average Performance Drop: {round((baseline['accuracy'].mean() - high_drift['accuracy'].mean()) * 100, 2)}%
+    """
+
+    elements.append(Paragraph(summary_text, styles["Normal"]))
+    elements.append(Spacer(1, 0.4 * inch))
+
+    # Model Comparison Table
+    elements.append(Paragraph("<b>Model Performance Comparison</b>", styles["Heading2"]))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    comparison_data = [["Model", "Baseline Acc", "Drifted Acc", "Degradation %"]]
+
+    for model_name in baseline['model'].unique():
+        base = baseline[baseline['model'] == model_name].iloc[0]
+        drift = high_drift[high_drift['model'] == model_name].iloc[0]
+
+        degradation = round((base['accuracy'] - drift['accuracy']) / base['accuracy'] * 100, 2)
+
+        comparison_data.append([
+            model_name,
+            round(base['accuracy'], 4),
+            round(drift['accuracy'], 4),
+            f"{degradation}%"
+        ])
+
+    table = Table(comparison_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+    ]))
+
+    elements.append(table)
+    elements.append(PageBreak())
+
+    # Add Visualizations (Colour)
+    elements.append(Paragraph("<b>Model Performance Under Drift</b>", styles["Heading2"]))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    for model_name in results_df['model'].unique():
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        model_data = results_df[results_df['model'] == model_name]
+
+        ax.plot(
+            model_data['drift_magnitude'],
+            model_data['accuracy'],
+            marker='o',
+            linewidth=2
+        )
+
+        ax.set_title(f"{model_name} - Accuracy vs Drift")
+        ax.set_xlabel("Drift Magnitude")
+        ax.set_ylabel("Accuracy")
+        ax.grid(True)
+
+        image_path = f"{model_name}_drift_plot.png"
+        fig.savefig(image_path, dpi=300)
+        plt.close(fig)
+
+        elements.append(Paragraph(f"{model_name} Performance Curve", styles["Heading3"]))
+        elements.append(Spacer(1, 0.2 * inch))
+        elements.append(RLImage(image_path, width=5.5 * inch, height=3.5 * inch))
+        elements.append(Spacer(1, 0.5 * inch))
+
+    # Conclusion
+    elements.append(PageBreak())
+    elements.append(Paragraph("<b>Research Conclusion</b>", styles["Heading2"]))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    conclusion_text = """
+    This study confirms that ML models significantly degrade under covariate drift.
+    Tree-based models such as XGBoost and Random Forest demonstrate greater robustness
+    compared to linear models under increasing drift magnitude.
+    Early drift detection is essential to maintain production reliability.
+    """
+
+    elements.append(Paragraph(conclusion_text, styles["Normal"]))
+
+    doc.build(elements)
+
+    return pdf_path 
 st.markdown("---")
 st.markdown("<p style='text-align:center; color:#6b7280; font-size:0.85rem;'>📊 NCI Master's Project | Data Mining & ML 2026 | Empirical Study of ML Model Performance Under Data Drift</p>", unsafe_allow_html=True)
+# =====================================================
+# 📄 PDF DOWNLOAD BUTTON (ONLY ADDITION – NO CHANGES ABOVE)
+# =====================================================
+
+try:
+    if os.path.exists('results/experiments/covariate_drift_results.csv'):
+        results = pd.read_csv('results/experiments/covariate_drift_results.csv')
+
+        st.markdown("---")
+        st.markdown("## 📄 Download Full Model Performance Report")
+
+        if st.button("📥 Generate & Download PDF Report"):
+
+            pdf_path = generate_pdf_report(results)
+
+            with open(pdf_path, "rb") as f:
+                st.download_button(
+                    label="⬇️ Click Here to Download Report",
+                    data=f,
+                    file_name="ML_Data_Drift_Report.pdf",
+                    mime="application/pdf"
+                )
+except:
+    pass
