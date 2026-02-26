@@ -499,16 +499,21 @@ try:
         st.markdown("---")
         st.markdown("## 📄 Download Full Model Performance Report")
 
-        if st.button("📥 Generate & Download PDF Report"):
-
+        # Step 1: Generate PDF button
+        if st.button("📥 Generate PDF Report"):
             pdf_path = generate_pdf_report(results)
+            st.session_state["pdf_path"] = pdf_path
+            st.success("PDF Generated Successfully!")
 
-            with open(pdf_path, "rb") as f:
+        # Step 2: Show download button AFTER generation
+        if "pdf_path" in st.session_state:
+            with open(st.session_state["pdf_path"], "rb") as f:
                 st.download_button(
                     label="⬇️ Click Here to Download Report",
                     data=f,
                     file_name="ML_Data_Drift_Report.pdf",
                     mime="application/pdf"
                 )
-except:
-    pass
+
+except Exception as e:
+    st.error(f"Error: {e}")
