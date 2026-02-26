@@ -5,13 +5,24 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
 import os
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
+
+# ===== ReportLab PDF Imports =====
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    Image as RLImage,
+    PageBreak
+)
+
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
-from datetime import datetime
+from reportlab.lib import colors
 
+from datetime import datetime
 st.set_page_config(
     page_title="Data Drift Research Dashboard",
     page_icon="📊",
@@ -505,21 +516,16 @@ try:
         st.markdown("---")
         st.markdown("## 📄 Download Full Model Performance Report")
 
-        # Step 1: Generate PDF button
-        if st.button("📥 Generate PDF Report"):
-            pdf_path = generate_pdf_report(results)
-            st.session_state["pdf_path"] = pdf_path
-            st.success("PDF Generated Successfully!")
+        if st.button("📥 Generate & Download PDF Report"):
 
-        # Step 2: Show download button AFTER generation
-        if "pdf_path" in st.session_state:
-            with open(st.session_state["pdf_path"], "rb") as f:
+            pdf_path = generate_pdf_report(results)
+
+            with open(pdf_path, "rb") as f:
                 st.download_button(
                     label="⬇️ Click Here to Download Report",
                     data=f,
                     file_name="ML_Data_Drift_Report.pdf",
                     mime="application/pdf"
                 )
-
-except Exception as e:
-    st.error(f"Error: {e}")
+except:
+    pass
