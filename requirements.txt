@@ -8,3 +8,4 @@ scipy
 scikit-learn
 xgboost==1.7.6
 plotly
+reportlab
