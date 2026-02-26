@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
 import os
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
 
 st.set_page_config(
     page_title="Data Drift Research Dashboard",
