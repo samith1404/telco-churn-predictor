@@ -696,69 +696,150 @@ elif page == "🎯 Model Robustness":
         st.pyplot(fig)
         plt.close()
 
-        st.success(f"✅ Most Robust: **{best_model['Model']}** ({best_model['Degradation %']:.1f}% drop)")
-        st.error(f"⚠️ Least Robust: **{worst_model['Model']}** ({worst_model['Degradation %']:.1f}% drop)")
+        # SVM warning — degenerate classifier
+        has_svm = 'SVM' in df['Model'].values
 
-        # ---- THE KEY ADDITION: Clear recommendation ----
         st.markdown("---")
-        st.markdown("## 🏆 Model Recommendation")
 
-        st.markdown(f"""
-        <div class='recommendation-box'>
-            <h3 style='color:#6ee7b7 !important; margin:0 0 1rem 0;'>
-                ✅ Recommended for Production: {best_model['Model']}
-            </h3>
-            <p style='color:#d1fae5 !important; margin:0 0 0.8rem 0; font-size:1rem;'>
-            Based on our empirical analysis across all drift magnitudes (0.0 → 1.0),
-            <b>{best_model['Model']}</b> is the recommended model for deployment in
-            <b>drift-prone production environments</b> such as telco customer churn prediction.
-            </p>
-            <p style='color:#d1fae5 !important; margin:0; font-size:0.95rem;'>
-            📌 <b>Justification:</b><br>
-            • Lowest degradation of <b>{best_model['Degradation %']:.2f}%</b> under maximum drift<br>
-            • Maintains competitive baseline accuracy of <b>{best_model['Baseline Accuracy']:.4f}</b><br>
-            • Most stable performance curve across all 7 drift levels tested<br>
-            • Remains reliable even at severe drift magnitudes (0.7–1.0) where other models fail
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # When NOT to use best model
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div class='finding-card'>
-                <h4 style='color:#60a5fa !important; margin:0 0 0.5rem 0;'>📌 When to use {best_model['Model']}</h4>
-                <p style='color:#e0e0e0 !important; font-size:0.9rem; margin:0;'>
-                ✅ Stable environments with gradual drift<br>
-                ✅ When retraining budget is limited<br>
-                ✅ Long deployment cycles (6+ months)<br>
-                ✅ When interpretability matters
+        # SVM Critical Finding callout
+        if has_svm:
+            st.markdown("""
+            <div class='alert-orange'>
+                <h4 style='color:#fed7aa !important; margin:0 0 0.5rem 0;'>⚠️ Critical Finding: SVM Degenerate Behaviour Detected</h4>
+                <p style='color:#ffedd5 !important; margin:0; font-size:0.9rem;'>
+                SVM shows <b>0.00% degradation</b> — but this is <b>misleading</b>. Its precision, recall, and F1-score
+                are <b>all 0.0</b> across every drift level, meaning it collapsed to predicting only the majority class
+                (accuracy ≈ 73.5% = majority class baseline). SVM's "robustness" is actually a <b>total model failure</b>,
+                not resilience. This is a key research finding: <i>accuracy alone is insufficient to evaluate model robustness under drift.</i>
                 </p>
             </div>
             """, unsafe_allow_html=True)
 
-        with col2:
-            st.markdown(f"""
+        st.success(f"✅ Most Robust (genuine): **Logistic Regression** (-1.18% — accuracy slightly improved under drift)")
+        st.warning(f"⚠️ SVM: 0.00% degradation but **degenerate** — predicts only majority class, F1 = 0.0")
+        st.error(f"❌ Least Robust: **Random Forest** (1.31% accuracy drop, F1 collapses from 0.519 → 0.385)")
+
+        # ---- CLEAR RECOMMENDATION ----
+        st.markdown("---")
+        st.markdown("## 🏆 Model Recommendation")
+
+        st.markdown("""
+        <div class='recommendation-box'>
+            <h3 style='color:#6ee7b7 !important; margin:0 0 1rem 0;'>
+                ✅ Recommended for Production: Logistic Regression
+            </h3>
+            <p style='color:#d1fae5 !important; margin:0 0 0.8rem 0; font-size:1rem;'>
+            Based on our empirical analysis across <b>7 drift magnitudes (0.0 → 1.0)</b> and
+            <b>4 metrics</b> (accuracy, precision, recall, F1),
+            <b>Logistic Regression</b> is the recommended model for deployment in
+            drift-prone production environments such as telco customer churn prediction.
+            </p>
+            <p style='color:#d1fae5 !important; margin:0; font-size:0.95rem;'>
+            📌 <b>Justification:</b><br>
+            • <b>Only model that improved</b> under drift: accuracy went from 0.7793 → 0.7885 (+1.18%)<br>
+            • Highest baseline accuracy tied with XGBoost: <b>0.7793</b><br>
+            • Consistent F1-score across all drift levels (0.541 → 0.516) — no sudden collapse<br>
+            • Highest ROC-AUC at max drift: <b>0.8221</b> — best discrimination ability under stress<br>
+            • Interpretable — coefficients can explain <i>why</i> predictions change under drift
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("""
             <div class='finding-card'>
-                <h4 style='color:#f87171 !important; margin:0 0 0.5rem 0;'>⚠️ Avoid {worst_model['Model']} when:</h4>
+                <h4 style='color:#60a5fa !important; margin:0 0 0.5rem 0;'>✅ Use Logistic Regression when:</h4>
                 <p style='color:#e0e0e0 !important; font-size:0.9rem; margin:0;'>
-                ❌ Data distributions change frequently<br>
-                ❌ Long intervals between model retraining<br>
-                ❌ Business operates in volatile markets<br>
-                ❌ Silent failures are unacceptable
+                • Long deployment cycles (6+ months)<br>
+                • Limited retraining budget<br>
+                • Interpretability is required<br>
+                • Data drifts gradually over time
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown("""
+            <div class='finding-card'>
+                <h4 style='color:#fbbf24 !important; margin:0 0 0.5rem 0;'>⚡ XGBoost as runner-up:</h4>
+                <p style='color:#e0e0e0 !important; font-size:0.9rem; margin:0;'>
+                • 1.09% degradation — acceptable<br>
+                • Better recall than LR under drift<br>
+                • Use when <b>catching churners</b><br>&nbsp;&nbsp;matters more than precision<br>
+                • Good if retraining is frequent
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col3:
+            st.markdown("""
+            <div class='finding-card'>
+                <h4 style='color:#f87171 !important; margin:0 0 0.5rem 0;'>❌ Avoid Random Forest when:</h4>
+                <p style='color:#e0e0e0 !important; font-size:0.9rem; margin:0;'>
+                • Data distributions shift over time<br>
+                • Intervals between retraining are long<br>
+                • F1-score matters (drops 26% at max drift)<br>
+                • Market is volatile or seasonal
                 </p>
             </div>
             """, unsafe_allow_html=True)
 
         # Retraining threshold guidance
-        st.markdown("### ⏰ When Should You Retrain?")
+        st.markdown("### ⏰ When Should You Retrain? — Thresholds from This Study")
         threshold_data = pd.DataFrame({
-            "Drift Magnitude Detected": ["0.0 – 0.2", "0.2 – 0.4", "0.4 – 0.6", "0.6 – 1.0"],
-            "Recommendation": ["✅ No action needed", "👀 Monitor closely", "⚠️ Plan retraining soon", "🚨 Retrain immediately"],
-            "Expected Accuracy Drop": ["< 0.5%", "0.5% – 1.5%", "1.5% – 3%", "> 3%"]
+            "Drift Magnitude Detected": ["0.0 – 0.2", "0.2 – 0.5", "0.5 – 0.7", "0.7 – 1.0"],
+            "Action": ["✅ No action needed", "👀 Monitor F1-score weekly", "⚠️ Schedule retraining", "🚨 Retrain immediately"],
+            "What Our Data Shows": [
+                "All models stable — accuracy within 0.5% of baseline",
+                "Random Forest F1 starts dropping noticeably (0.519 → 0.456)",
+                "Random Forest F1 at 0.460, XGBoost at 0.487 — meaningful degradation",
+                "Random Forest F1 collapsed to 0.385 — 26% drop. Retrain urgently."
+            ],
+            "Best Model at This Stage": [
+                "Any — all perform similarly",
+                "Logistic Regression or XGBoost",
+                "Logistic Regression (most stable F1)",
+                "Logistic Regression only reliable option"
+            ]
         })
         st.dataframe(threshold_data, use_container_width=True, hide_index=True)
+
+        # F1 score collapse chart — shows the real story
+        st.markdown("### 📉 F1-Score Collapse Under Drift — The Real Story")
+        st.markdown("*Accuracy hides the truth. F1-score reveals which models are truly failing.*")
+
+        try:
+            results_full = pd.read_csv('results/experiments/covariate_drift_results.csv')
+            fig2, ax2 = plt.subplots(figsize=(12, 5))
+            fig2.patch.set_facecolor('#1e1e1e')
+            ax2.set_facecolor('#1e1e1e')
+
+            model_colors = {'Logistic Regression': '#3b82f6', 'Random Forest': '#f97316',
+                           'XGBoost': '#22c55e', 'SVM': '#a855f7'}
+
+            for model_name in results_full['model'].unique():
+                data = results_full[results_full['model'] == model_name].sort_values('drift_magnitude')
+                style = '--' if model_name == 'SVM' else '-'
+                ax2.plot(data['drift_magnitude'], data['f1_score'], marker='o',
+                        label=model_name, linewidth=2.5, markersize=7,
+                        color=model_colors.get(model_name, 'white'), linestyle=style)
+
+            ax2.set_xlabel('Drift Magnitude (0.0 = No Drift → 1.0 = Extreme Drift)', fontsize=11, color='white')
+            ax2.set_ylabel('F1-Score', fontsize=11, color='white')
+            ax2.set_title('F1-Score Under Drift — SVM Collapses to 0, Random Forest Degrades Most',
+                         fontsize=12, fontweight='bold', color='white')
+            ax2.legend(fontsize=10, facecolor='#2d2d2d', labelcolor='white')
+            ax2.tick_params(colors='white')
+            for spine in ax2.spines.values():
+                spine.set_color('#444')
+            ax2.grid(True, alpha=0.2, color='white')
+            ax2.annotate('SVM: F1=0 across all\ndrift levels — degenerate',
+                        xy=(0.5, 0.01), xytext=(0.3, 0.12),
+                        arrowprops=dict(arrowstyle='->', color='#a855f7'),
+                        color='#a855f7', fontsize=9)
+            st.pyplot(fig2)
+            plt.close()
+        except:
+            pass
 
     except Exception as e:
         st.error(f"Error: {e}")
@@ -792,11 +873,15 @@ elif page == "💼 Industry Value":
         """)
         st.markdown("### 🎤 Interview Answer")
         st.markdown("""
-        > *"I studied production ML reliability — specifically how different model architectures
-        respond to data drift. I simulated covariate shift using Gaussian noise injection across
-        7 drift magnitudes, tested 4 models systematically, and used degradation percentage —
-        not just accuracy — as my key metric. This revealed which model stays reliable the longest
-        before retraining is needed, which is the question every production ML team actually faces."*
+        > *"I studied how 4 ML models respond to covariate drift in a telco churn dataset.
+        I simulated drift using Gaussian noise injection and mean shift on all numeric features,
+        testing 7 drift magnitudes from 0.0 to 1.0.
+        My key finding was that accuracy is misleading under drift — SVM appeared 0% degraded
+        but actually collapsed to predicting only the majority class with F1 of 0.
+        Logistic Regression was genuinely the most robust, actually improving slightly under drift
+        while maintaining consistent F1-scores. Random Forest was least robust, with F1 dropping
+        26% at maximum drift. This shows that model selection for production should prioritise
+        degradation robustness, not just baseline accuracy."*
         """)
     with col2:
         st.markdown("### 💡 Practical Applications")
@@ -955,3 +1040,4 @@ try:
                 )
 except:
     pass
+
